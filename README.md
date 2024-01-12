@@ -4,6 +4,31 @@
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
 Certainly! I'll update the "Setting Up the Environment" section of your Markdown document to include instructions on how to install dependencies from `requirements.txt`. Since there are two separate files for Linux and Windows, I'll include steps for both operating systems.
 
+### Setting Up a Telegram Developer Account and Obtaining API Credentials**
+
+Before you start using Telegram Overseer, you need to set up a Telegram Developer account and obtain your API ID and API Hash. These credentials are essential for the tool to interact with Telegram’s API. Follow these steps to set up your account and get your credentials:
+
+1. **Create a Telegram Developer Account**:
+   - Visit [Telegram’s Developer Page](https://my.telegram.org).
+   - Log in with your Telegram account. Ensure that the phone number you use here is the same as the one you intend to use with Telegram Overseer.
+
+2. **Register a New Application**:
+   - Once logged in, go to the 'API development tools' section.
+   - Click on 'Create a new application'.
+   - Fill in the required details such as the application name, short name, and URL (if any). The application name can be anything, such as "Telegram Overseer".
+
+3. **Obtain API ID and API Hash**:
+   - After registering your application, you will receive your unique `API ID` and `API Hash`.
+   - Make a note of these credentials as they will be required to configure the Telegram Overseer tool.
+
+4. **Configuring Telegram Overseer**:
+   - Use the `set_api_id` and `set_api_hash` commands in Telegram Overseer to input your obtained API ID and API Hash.
+   - This will allow the tool to access Telegram's API with your developer credentials.
+
+It's important to keep your API ID and API Hash confidential. These credentials provide access to the Telegram API and should only be used with trusted applications.
+
+---
+
 ## Setting Up the Environment
 
 ### Installing Python
