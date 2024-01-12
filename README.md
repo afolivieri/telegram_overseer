@@ -27,8 +27,6 @@ Before you start using Telegram Overseer, you need to set up a Telegram Develope
 
 It's important to keep your API ID and API Hash confidential. These credentials provide access to the Telegram API and should only be used with trusted applications.
 
----
-
 ## Setting Up the Environment
 
 ### Installing Python
