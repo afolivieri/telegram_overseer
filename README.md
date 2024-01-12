@@ -2,7 +2,6 @@
 
 ## Introduction
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
-Certainly! I'll update the "Setting Up the Environment" section of your Markdown document to include instructions on how to install dependencies from `requirements.txt`. Since there are two separate files for Linux and Windows, I'll include steps for both operating systems.
 
 ### Setting Up a Telegram Developer Account and Obtaining API Credentials**
 
