@@ -12,6 +12,8 @@ from datetime import datetime
 from pytz import timezone, utc
 from stop_words import get_stop_words
 from wordcloud import WordCloud
+from src.credential_handler import OverseerCredentialManager
+from telethon import TelegramClient
 
 
 class CleanAndSave:
@@ -35,7 +37,7 @@ class CleanAndSave:
     errors = ""
     # Defines the columns in the SQLite database
     post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text BLOB, " \
-                   "media_type TEXT, views INTEGER, forwards INTEGER, edit TEXT"
+                   "media_type TEXT, views INTEGER, forwards INTEGER, edit TEXT, post_url TEXT, forwarded_from TEXT"
 
     replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text BLOB, " \
                       "edit TEXT, reactions BLOB"
@@ -49,6 +51,9 @@ class CleanAndSave:
     for db, cols in zip(dbs, columns):
         c.execute("CREATE TABLE IF NOT EXISTS {} ({});".format(db, cols))
         conn.commit()
+
+    api_id, api_hash, phone, username = OverseerCredentialManager().retrieve_creds()
+    client = TelegramClient(username, api_id=api_id, api_hash=api_hash)
 
     @staticmethod
     def extract_data(data, *args) -> tuple:
@@ -119,7 +124,23 @@ class CleanAndSave:
             reaction_df["total"] = total
         return reaction_df
 
-    def post_clean_and_save(self, filepath, author, ch_id) -> None:
+    async def get_original_url_if_forwarded(self, post) -> str:
+        from_data = self.extract_data(post, "fwd_from")
+        if from_data is not None and (not isinstance(from_data, float) or from_data == from_data):
+            from_id = self.extract_data(from_data, "from_id")
+            message_id = self.extract_data(from_data, "channel_post")
+            channel_id = self.extract_data(from_id, "channel_id")
+            if not self.client.is_connected():
+                await self.client.connect()
+            entity = await self.client.get_entity(channel_id)
+            await self.client.disconnect()
+            channel_name = entity.username
+            original_url = "https://t.me/{}/{}".format(channel_name, message_id)
+        else:
+            original_url = "not a forwarded post"
+        return original_url
+
+    async def post_clean_and_save(self, filepath, author, ch_id) -> None:
         """
         This function opens the provided JSON file, loads its content, and extracts the necessary post
         data (including text, views, edit date, media type, and others). It also processes the post's reactions
@@ -138,7 +159,7 @@ class CleanAndSave:
         else:
             # If data exists, process each entry and extract necessary information
             data_dict = {"channel_id": [], "author": [], "message_id": [], "date": [], "text": [], "media_type": [],
-                         "views": [], "forwards": [], "edit": []}
+                         "views": [], "forwards": [], "edit": [], "post_url": [], "forwarded_from": []}
             reaction_df = pd.DataFrame({})
             for post in data:
                 data_dict["channel_id"].append(ch_id)
@@ -151,6 +172,8 @@ class CleanAndSave:
                 data_dict["views"].append(self.extract_data(post, "views"))
                 data_dict["forwards"].append(self.extract_data(post, "forwards"))
                 data_dict["edit"].append(self.extract_data(post, "edit_date"))
+                data_dict["post_url"].append("https://t.me/{}/{}".format(author, msg_id))
+                data_dict["forwarded_from"].append(await self.get_original_url_if_forwarded(post))
                 reactions = self.extract_data(post, "reactions", "results")
                 reaction_cleaned = self.post_reaction_clean_and_save(reactions, ch_id, msg_id)
                 reaction_df = pd.concat([reaction_df, reaction_cleaned], axis=0, ignore_index=True)
@@ -202,7 +225,7 @@ class CleanAndSave:
             replies_data["reactions"] = replies_data["reactions"].astype("str")
             replies_data.to_sql("replies", self.conn, if_exists="append", index=False)
 
-    def cleaning_process(self) -> None:
+    async def cleaning_process(self) -> None:
         """
         This primary function drives the data cleaning process. It applies the data cleaning operations
         in a loop across all relevant files in the "./output" directory.
@@ -231,7 +254,7 @@ class CleanAndSave:
                             self.replies_clean_and_save(filepath, channel_id, channel_or_reply_id)
                         else:
                             author = os.path.split(os.path.split(root)[0])[1].replace("channel_name_", "")
-                            self.post_clean_and_save(filepath, author, channel_or_reply_id)
+                            await self.post_clean_and_save(filepath, author, channel_or_reply_id)
                             self.update_with_errors(self.errors, channel_or_reply_id)
                         cleaned.append(filepath)
         self.already_cleaned.extend(cleaned)
@@ -574,3 +597,25 @@ class CleanAndSave:
                          .format(author, self.now, author), index=False)
         pc.printout("Done!\n", pc.CYAN)
 
+    def search_keywords(self) -> None:
+        pc.printout("This will create a table with all the posts with the matching keywords (case insensitive)\n", pc.CYAN)
+        pc.printout("Please, give me a list of comma separated words you want to search\n", pc.CYAN)
+        words = input()
+        wordlist = [word.strip() for word in words.split(",")]
+
+        pc.printout("Please, give me a start date to filter the SQL database, the format should be dd/mm/yyyy\n", pc.CYAN)
+        date_start = input()
+        date_start = datetime.strptime(date_start, '%d/%m/%Y').strftime('%Y-%m-%d')
+        all_keywords_df = pd.DataFrame()
+        try:
+            os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
+        except FileExistsError:
+            pass
+        for word in wordlist:
+            keyword_sql =   ("SELECT * from posts p "
+                             "WHERE text LIKE '%{}%'"
+                             "AND date > {};").format(word, date_start)
+            keyword_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
+            all_keywords_df = pd.concat([all_keywords_df, keyword_df], ignore_index=True)
+        all_keywords_df.drop_duplicates(inplace=True)
+        all_keywords_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)

@@ -82,6 +82,8 @@ def cmdlist() -> None:
     pc.printout("Remove custom stopwords for the wordcloud\n", colour=pc.YELLOW)
     pc.printout("frequency\t\t")
     pc.printout("Exctract the 24h and weekly frequency of posts of the targets\n", colour=pc.YELLOW)
+    pc.printout("keywords_search\t\t")
+    pc.printout("Save the posts containing the keyword in an excel spreadsheet, needs a start date\n", colour=pc.YELLOW)
 
 # A function to handle system signals
 def signal_handler(sig: object, frame: object) -> None:
@@ -128,7 +130,7 @@ commands = {
     'reset_targets': TScap.reset_targets,
     'save_targets': TScap.save_targets,
     'load_targets': TScap.load_targets,
-    'retrieve_messages': TScap.looping_retrieving_messages,
+    'retrieve_messages': TScap.main_loop_clean_and_save,
     'date': TScap.retrieve_date,
     'set_start_date': TScap.add_date,
     'set_end_date': TScap.add_end_date,
@@ -142,6 +144,7 @@ commands = {
     'show_stopwords': CeS.show_custom_stopwords,
     'remove_stopwords': CeS.remove_custom_stopwords,
     'frequency': CeS.frequency,
+    'keywords_search': CeS.search_keywords,
     'hidden_cleaning_button': CeS.cleaning_process
 }
 # Set signal handler for interruption signal

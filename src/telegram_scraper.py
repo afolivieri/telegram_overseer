@@ -320,8 +320,9 @@ class TelegramScraper:
         await self.auth_check()
         for target in self.targets:
             await self.retrieve_messages(target=target)
+        await self.client.disconnect()
 
-    def looping_retrieving_messages(self) -> None:
+    async def retrieving_and_cleaning_messages(self) -> None:
         """
         Continuously retrieves in a loop messages until a certain condition is met.
 
@@ -334,9 +335,13 @@ class TelegramScraper:
         else:
             try:
                 # start retrieving messages for all targets
-                self.client.loop.run_until_complete(self.start_retrieving_messages())
+                await self.start_retrieving_messages()
                 pc.printout("Saving messages in SQLite table...\n", pc.RED)
-                CleanAndSave().cleaning_process()
+                clean_and_save = CleanAndSave()
+                await clean_and_save.cleaning_process()
                 pc.printout("Done!\n", pc.RED)
             except ChatAdminRequiredError:
                 pc.printout("Chat admin privileges are required to do that in the specified chat\n", pc.RED)
+
+    def main_loop_clean_and_save(self) -> None:
+        self.client.loop.run_until_complete(self.retrieving_and_cleaning_messages())
