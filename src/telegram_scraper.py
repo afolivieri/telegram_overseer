@@ -245,12 +245,15 @@ class TelegramScraper:
 
     async def retrieve_messages(self, target, include_replies=True) -> None:
         """
-        Asynchronously retrieves the messages from the Telegram API based on defined parameters.
-        Retrieves and persists message data and replies. Handles message retrieval errors.
+        Asynchronously retrieves messages from a specified Telegram channel.
+        Optionally retrieves replies to each message if include_replies is True.
 
-        Returns
-        -------
-        None
+        Parameters:
+        target (str): The Telegram channel URL or identifier.
+        include_replies (bool): Flag to determine whether to retrieve replies.
+
+        Returns:
+        None: Saves messages and, optionally, their replies in JSON files.
         """
         # Start the client
         await self.client.get_me()
@@ -313,11 +316,11 @@ class TelegramScraper:
 
     async def retrieving_and_cleaning_messages(self) -> None:
         """
-        Continuously retrieves in a loop messages until a certain condition is met.
+        Handles the full process of message retrieval and data cleaning.
+        Iterates over each target, retrieves messages and replies, and cleans the data.
 
-        Returns
-        -------
-        None
+        Returns:
+        None: The function orchestrates the retrieval and cleaning processes but does not return a value.
         """
         if not self.targets:
             pc.printout("No target(s) Group(s) is set\n", pc.RED)
@@ -339,4 +342,11 @@ class TelegramScraper:
                 pc.printout("Chat admin privileges are required to do that in the specified chat\n", pc.RED)
 
     def main_loop_clean_and_save(self) -> None:
+        """
+        The main loop that initiates the message retrieval and data cleaning process.
+        This function is the starting point when the script is executed.
+
+        Returns:
+        None: Drives the overall process but does not return a value.
+        """
         self.client.loop.run_until_complete(self.retrieving_and_cleaning_messages())

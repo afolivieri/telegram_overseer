@@ -3,7 +3,7 @@
 ## Introduction
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
 
-### Setting Up a Telegram Developer Account and Obtaining API Credentials**
+### Setting Up a Telegram Developer Account and Obtaining API Credentials
 
 Before you start using Telegram Overseer, you need to set up a Telegram Developer account and obtain your API ID and API Hash. These credentials are essential for the tool to interact with Telegram’s API. Follow these steps to set up your account and get your credentials:
 
@@ -98,8 +98,8 @@ The Telegram Overseer tool offers a variety of commands to manage credentials, t
 - **reset_date**: Clears all saved dates.
 
 ### Data Retrieval and Cleaning
-- **retrieve_messages**: Retrieves messages from target groups and saves them in JSON and SQLite DB.
-- **delete_double_data**: Deletes duplicate data in the SQLite database.
+- **retrieve_messages**: Retrieves messages, with an option to include/exclude replies. Saves data in JSON and SQLite DB.
+- **delete_double_data**: Removes duplicate entries in the database.
 - **full_replies_view**: Creates a view in SQLite named 'full_replies' with all messages and their replies.
 
 ### Analysis Tools
@@ -107,6 +107,9 @@ The Telegram Overseer tool offers a variety of commands to manage credentials, t
 - **reaction_data**: Generates a CSV with a summary of all reactions per type and the top post for each reaction.
 - **wordclouds**: Creates two word clouds, one from target posts and another including replies.
 - **frequency**: Extracts the 24-hour and weekly frequency of posts from the targets.
+- **keywords_search**: This function allows you to search for specific keywords within the posts. It creates a table with all posts containing the specified keywords (case insensitive).
+
+All the resulting data is saved as a CSV file(s) or PNG images in the graphs_data_and_visualizations directory.
 
 ### Customization for Analysis
 - **add_stopwords**: Adds custom stopwords for the word cloud.

@@ -125,6 +125,17 @@ class CleanAndSave:
         return reaction_df
 
     async def get_original_url_if_forwarded(self, post) -> str:
+        """
+        Processes and saves replies data into the SQLite database.
+
+        Parameters:
+        filepath (str): Path to the file containing replies data.
+        ch_id (str): Channel ID of the Telegram channel.
+        post_id (str): Post ID to which the replies are associated.
+
+        Returns:
+        None: The function doesn't return anything but saves data to the SQLite database.
+        """
         from_data = self.extract_data(post, "fwd_from")
         if from_data is not None and (not isinstance(from_data, float) or from_data == from_data):
             from_id = self.extract_data(from_data, "from_id")
@@ -227,8 +238,10 @@ class CleanAndSave:
 
     async def cleaning_process(self) -> None:
         """
-        This primary function drives the data cleaning process. It applies the data cleaning operations
-        in a loop across all relevant files in the "./output" directory.
+        Drives the data cleaning process across all relevant files in the output directory.
+
+        Returns:
+        None: The function doesn't return anything but performs data cleaning and saving.
         """
         self.load_cleaned_file()
         cleaned = []
@@ -598,6 +611,15 @@ class CleanAndSave:
         pc.printout("Done!\n", pc.CYAN)
 
     def search_keywords(self) -> None:
+        """
+        Creates a table with all posts containing specified keywords.
+
+        Parameters:
+        None: The function takes input from the user.
+
+        Returns:
+        None: The function doesn't return anything but saves the resulting data as a CSV.
+        """
         pc.printout("This will create a table with all the posts with the matching keywords (case insensitive)\n", pc.CYAN)
         pc.printout("Please, give me a list of comma separated words you want to search\n", pc.CYAN)
         words = input()
