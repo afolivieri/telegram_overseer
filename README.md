@@ -3,10 +3,6 @@
 ## Introduction
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
 
-Certainly! Adding a section called "Updates" to your README is a great idea. It helps users track changes and updates over time. Below is a suggested write-up for this section:
-
----
-
 ## Updates
 
 ### Version 1.01
