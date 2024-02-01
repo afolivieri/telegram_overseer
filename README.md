@@ -3,6 +3,33 @@
 ## Introduction
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
 
+Certainly! Adding a section called "Updates" to your README is a great idea. It helps users track changes and updates over time. Below is a suggested write-up for this section:
+
+---
+
+## Updates
+
+### Version 1.01
+
+**Release Date:** 01/02/2024
+
+**Major Changes:**
+
+1. **SQL Table Structure Changes:**
+   - The SQL database structure has been updated. These changes are not backward compatible with previous versions. Users are advised to start a fresh database setup to accommodate these changes.
+
+2. **Keywords Search Functionality:**
+   - A new feature, 'Keywords Search', has been added. This allows users to search for specific keywords within posts in a case-insensitive manner, enhancing the tool's analytical capabilities.
+
+3. **Optional Replies Retrieval Flag:**
+   - Users now have the option to include or exclude replies when retrieving messages. This makes the data collection process more flexible and tailored to specific analysis needs.
+
+4. **Direct Link to Messages:**
+   - The SQL database now includes direct links to the original Telegram messages. This allows for easier referencing and accessing of the source material directly from the database.
+
+5. **Forwarded Messages Linking:**
+   - For forwarded messages, links to the original posts are now included in the SQL database. This feature provides a better understanding of the message context and origin.
+
 ### Setting Up a Telegram Developer Account and Obtaining API Credentials
 
 Before you start using Telegram Overseer, you need to set up a Telegram Developer account and obtain your API ID and API Hash. These credentials are essential for the tool to interact with Telegram’s API. Follow these steps to set up your account and get your credentials:
@@ -31,6 +58,35 @@ It's important to keep your API ID and API Hash confidential. These credentials 
 ### Installing Python
 Ensure Python is installed on your system. You can download it from the [official Python website](https://www.python.org/downloads/).
 
+#### Optional But Recommended: Setting Up PyCharm for Development
+
+1. **Download and Install PyCharm**:
+   - Visit the [PyCharm download page](https://www.jetbrains.com/pycharm/download/).
+   - Choose the edition that suits your needs (Community Edition is free).
+   - Follow the installation instructions for your operating system.
+
+2. **Cloning the Repository with PyCharm**:
+   - Open PyCharm and select `Get from VCS` (Version Control System).
+   - Enter the URL of the Telegram Overseer Git repository.
+   - Choose the directory where you want to clone the repository and click `Clone`.
+
+3. **Setting Up the Virtual Environment**:
+   - In PyCharm, go to `File > Settings > Project: Telegram Overseer > Python Interpreter`.
+   - Click the gear icon and choose `Add`.
+   - Select `Virtual Environment`, and ensure the `Base interpreter` points to your Python installation.
+   - Choose the location for your new virtual environment within your project folder and click `OK`.
+
+4. **Installing Dependencies in PyCharm**:
+   - In the `Terminal` tab at the bottom of PyCharm, ensure you're in the project directory.
+   - Activate your virtual environment (the method varies by OS).
+   - Run `pip install -r requirements.txt` (or `requirements_windows.txt` for Windows) to install dependencies.
+
+5. **Running the Script in PyCharm**:
+   - In the PyCharm Project Explorer, right-click on `telegram_overseer.py`.
+   - Select `Run 'telegram_overseer'` to execute the script.
+   - PyCharm will automatically detect the correct Python interpreter and use the virtual environment you set up.
+
+## Without Pycharm:
 ### Using Virtual Environments
 Virtual environments in Python are used to manage project-specific dependencies. Here's how to set one up:
 

@@ -28,7 +28,7 @@ def welcome() -> None:
     pc.printout(" : :  :      :      : :: ::    :   : :  :: : :    : :: ::   : :: ::    :   : :\n", pc.GREEN)
     print("\n")
     pc.printout("Code structure based on OSINTagram\n", pc.YELLOW)
-    pc.printout("Alpha Build - Developed by Alberto Federico Olivieri\n\n", pc.CYAN)
+    pc.printout("1.01 - Developed by Alberto Federico Olivieri\n\n", pc.CYAN)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("-" * 80 + "\n")
 
