@@ -243,7 +243,7 @@ class TelegramScraper:
                 pc.printout('Please, enter your password: \n', pc.CYAN)
                 await self.client.sign_in(password=input())
 
-    async def retrieve_messages(self, target) -> None:
+    async def retrieve_messages(self, target, include_replies=True) -> None:
         """
         Asynchronously retrieves the messages from the Telegram API based on defined parameters.
         Retrieves and persists message data and replies. Handles message retrieval errors.
@@ -286,17 +286,20 @@ class TelegramScraper:
             all_replies = []
             if message.date < not_after_selected_date:
                 pc.printout("Retrieving message id number: {}\r".format(message.id))
-                try:
-                    # Gather replies for each message
-                    async for reply in self.client.iter_messages(target_channel,
-                                                                 reverse=True,
-                                                                 reply_to=message.id):
-                        all_replies.append(reply.to_dict())
-                    with open('./output/channel_name_{}/from_{}_to_{}/replies_{}/replies_data_{}.json'
-                         .format(channel_name, date_input, last_date, target_channel.id, message.id), 'w') as outfile:
-                        json.dump(all_replies, outfile, cls=DateTimeEncoder)
-                except telethon.errors.rpcerrorlist.MsgIdInvalidError:
-                    errors += " {}".format(str(message.id))
+                if include_replies:
+                    try:
+                        # Gather replies for each message
+                        async for reply in self.client.iter_messages(target_channel,
+                                                                     reverse=True,
+                                                                     reply_to=message.id):
+                            all_replies.append(reply.to_dict())
+                        with open('./output/channel_name_{}/from_{}_to_{}/replies_{}/replies_data_{}.json'
+                             .format(channel_name, date_input, last_date, target_channel.id, message.id), 'w') as outfile:
+                            json.dump(all_replies, outfile, cls=DateTimeEncoder)
+                    except telethon.errors.rpcerrorlist.MsgIdInvalidError:
+                        errors += " {}".format(str(message.id))
+                else:
+                    pass
                 all_messages.append(message.to_dict())
             else:
                 pass
@@ -307,20 +310,6 @@ class TelegramScraper:
              .format(channel_name, date_input, last_date), 'w') as handle:
             handle.write(errors)
         pc.printout("Messages retrieval from {} is finished\n".format(channel_name), pc.RED)
-
-    async def start_retrieving_messages(self) -> None:
-        """
-                Initiates the process of retrieving messages from each target.
-
-                Returns
-                -------
-                None
-                """
-        # authorize user first
-        await self.auth_check()
-        for target in self.targets:
-            await self.retrieve_messages(target=target)
-        await self.client.disconnect()
 
     async def retrieving_and_cleaning_messages(self) -> None:
         """
@@ -334,8 +323,14 @@ class TelegramScraper:
             pc.printout("No target(s) Group(s) is set\n", pc.RED)
         else:
             try:
-                # start retrieving messages for all targets
-                await self.start_retrieving_messages()
+                await self.auth_check()
+                for target in self.targets:
+                    pc.printout(f"Do you want to download replies for {target}? (yes/no): ", pc.CYAN)
+                    user_input = input().lower()
+                    include_replies = user_input == 'yes'
+                    # start retrieving messages for all targets
+                    await self.retrieve_messages(target=target, include_replies=include_replies)
+                await self.client.disconnect()
                 pc.printout("Saving messages in SQLite table...\n", pc.RED)
                 clean_and_save = CleanAndSave()
                 await clean_and_save.cleaning_process()
