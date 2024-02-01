@@ -3,6 +3,10 @@
 ## Introduction
 Welcome to the Telegram Overseer user guide! This tool is designed for easy data collection and analysis from Telegram. It's user-friendly for non-programmers, providing insights through various commands.
 
+## Requirements:
+
+**Python Version: Python 3.10 is required for running this version of Telegram Overseer.**
+
 ## Updates
 
 ### Version 1.01
