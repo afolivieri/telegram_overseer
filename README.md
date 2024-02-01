@@ -56,7 +56,7 @@ It's important to keep your API ID and API Hash confidential. These credentials 
 ## Setting Up the Environment
 
 ### Installing Python
-Ensure Python is installed on your system. You can download it from the [official Python website](https://www.python.org/downloads/).
+Ensure Python is installed on your system. You can download it from the [official Python website](https://www.python.org/downloads/release/python-3100/).
 
 #### Optional But Recommended: Setting Up PyCharm for Development
 
