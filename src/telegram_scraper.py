@@ -331,10 +331,10 @@ class TelegramScraper:
         else:
             try:
                 await self.auth_check()
+                pc.printout(f"Do you want to download replies for your targets? (yes/no): ", pc.CYAN)
+                user_input = input().lower()
+                include_replies = user_input == 'yes'
                 for target in self.targets:
-                    pc.printout(f"Do you want to download replies for {target}? (yes/no): ", pc.CYAN)
-                    user_input = input().lower()
-                    include_replies = user_input == 'yes'
                     # start retrieving messages for all targets
                     await self.retrieve_messages(target=target, include_replies=include_replies)
                 pc.printout("Saving messages in SQLite table...\n", pc.RED)
