@@ -29,10 +29,10 @@ class CleanAndSave:
     already_cleaned = []
     errors = ""
     # Defines the columns in the SQLite database
-    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text VARCHAR COLLATE UNICODE, " \
+    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text VARCHAR, " \
                    "media_type TEXT, views INTEGER, forwards INTEGER, edit TEXT, post_url TEXT, forwarded_from TEXT"
 
-    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text VARCHAR COLLATE UNICODE, " \
+    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text VARCHAR, " \
                       "edit TEXT, reactions BLOB"
 
     dbs = ["posts", "replies"]
