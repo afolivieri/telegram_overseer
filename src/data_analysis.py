@@ -639,6 +639,7 @@ class CleanAndSave:
             os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
         except FileExistsError:
             pass
+
         keyword_sql = ("SELECT * from posts p "
                        "WHERE date > '{}';").format(date_start)
         all_posts_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
