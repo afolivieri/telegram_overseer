@@ -57,6 +57,8 @@ class TelegramScraper:
     TZ = get_localzone_name() # Get the local timezone name
     # Retrieve credentials from the OverseerCredentialManager to use for the Telegram Scraper
     api_id, api_hash, phone, username = OverseerCredentialManager().retrieve_creds()
+    # Initialize the Telegram Client
+    client = TelegramClient(username, api_id=api_id, api_hash=api_hash)
 
     def __init__(self) -> None:
         """
@@ -69,8 +71,6 @@ class TelegramScraper:
         # Setting midnight timing constraint
         self.not_after_today_midnight = timezone(self.TZ).localize(
             datetime.replace(datetime.today(), hour=00, minute=00, second=00, microsecond=0000))
-        # Initialize the Telegram Client
-        self.client = TelegramClient(self.username, api_id=self.api_id, api_hash=self.api_hash)
 
     def add_targets(self) -> None:
         """
@@ -230,7 +230,7 @@ class TelegramScraper:
         None
         """
         # Start the client
-        await self.client.start()
+        await self.client.connect()
         pc.printout("Client auth check initiated\n")
         # Check if user is authorized
         # If not, initiate authorization process and handle potential SessionPasswordNeededError
@@ -242,6 +242,7 @@ class TelegramScraper:
             except SessionPasswordNeededError:
                 pc.printout('Please, enter your password: \n', pc.CYAN)
                 await self.client.sign_in(password=input())
+        await self.client.disconnect()
 
     async def retrieve_messages(self, target, include_replies=True) -> None:
         """
@@ -256,6 +257,7 @@ class TelegramScraper:
         None: Saves messages and, optionally, their replies in JSON files.
         """
         # Start the client
+        await self.client.connect()
         await self.client.get_me()
         channel_name = target.split("/")[-1]
         entity = channel_name
