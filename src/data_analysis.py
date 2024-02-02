@@ -13,8 +13,8 @@ from datetime import datetime
 from pytz import timezone, utc
 from stop_words import get_stop_words
 from wordcloud import WordCloud
-from src.credential_handler import OverseerCredentialManager
-from telethon import TelegramClient
+# from src.credential_handler import OverseerCredentialManager
+# from telethon import TelegramClient
 
 
 class CleanAndSave:
@@ -55,10 +55,16 @@ class CleanAndSave:
         for db, cols in zip(self.dbs, self.columns):
             self.c.execute("CREATE TABLE IF NOT EXISTS {} ({});".format(db, cols))
             self.conn.commit()
-    # Initialize Telegram client
-    api_id, api_hash, phone, username = OverseerCredentialManager().retrieve_creds()
-    client = TelegramClient(username, api_id=api_id, api_hash=api_hash)
+    """
+        self.client_clean_and_save = None
 
+    async def initialize_client(self):
+
+        if self.client_clean_and_save is None:  # Check if client is already initialized
+            self.api_id, self.api_hash, self.phone, self.username = OverseerCredentialManager().retrieve_creds()
+            self.client_clean_and_save = TelegramClient(self.username, api_id=self.api_id, api_hash=self.api_hash)
+            await self.client_clean_and_save.connect()
+"""
     @staticmethod
     def extract_data(data, *args) -> tuple:
         """
@@ -128,7 +134,7 @@ class CleanAndSave:
             reaction_df["total"] = total
         return reaction_df
 
-    async def get_original_url_if_forwarded(self, post) -> str:
+    async def get_original_url_if_forwarded(self, post, client) -> str:
         """
         Processes and saves replies data into the SQLite database.
 
@@ -145,10 +151,10 @@ class CleanAndSave:
             from_id = self.extract_data(from_data, "from_id")
             message_id = self.extract_data(from_data, "channel_post")
             channel_id = self.extract_data(from_id, "channel_id")
-            if not self.client.is_connected():
-                await self.client.connect()
+            if not client.is_connected():
+                await client.connect()
             try:
-                entity = await self.client.get_entity(channel_id)
+                entity = await client.get_entity(channel_id)
                 channel_name = entity.username
                 original_url = "https://t.me/{}/{}".format(channel_name, message_id)
             except ValueError:
@@ -157,7 +163,7 @@ class CleanAndSave:
             original_url = "not a forwarded post"
         return original_url
 
-    async def post_clean_and_save(self, filepath, author, ch_id) -> None:
+    async def post_clean_and_save(self, filepath, author, ch_id, client) -> None:
         """
         This function opens the provided JSON file, loads its content, and extracts the necessary post
         data (including text, views, edit date, media type, and others). It also processes the post's reactions
@@ -190,7 +196,7 @@ class CleanAndSave:
                 data_dict["forwards"].append(self.extract_data(post, "forwards"))
                 data_dict["edit"].append(self.extract_data(post, "edit_date"))
                 data_dict["post_url"].append("https://t.me/{}/{}".format(author, msg_id))
-                data_dict["forwarded_from"].append(await self.get_original_url_if_forwarded(post))
+                data_dict["forwarded_from"].append(await self.get_original_url_if_forwarded(post, client))
                 reactions = self.extract_data(post, "reactions", "results")
                 reaction_cleaned = self.post_reaction_clean_and_save(reactions, ch_id, msg_id)
                 reaction_df = pd.concat([reaction_df, reaction_cleaned], axis=0, ignore_index=True)
@@ -242,7 +248,7 @@ class CleanAndSave:
             replies_data["reactions"] = replies_data["reactions"].astype("str")
             replies_data.to_sql("replies", self.conn, if_exists="append", index=False)
 
-    async def cleaning_process(self) -> None:
+    async def cleaning_process(self, client) -> None:
         """
         Drives the data cleaning process across all relevant files in the output directory.
 
@@ -273,7 +279,9 @@ class CleanAndSave:
                             self.replies_clean_and_save(filepath, channel_id, channel_or_reply_id)
                         else:
                             author = os.path.split(os.path.split(root)[0])[1].replace("channel_name_", "")
-                            await self.post_clean_and_save(filepath, author, channel_or_reply_id)
+                            #await self.initialize_client()
+                            await self.post_clean_and_save(filepath, author, channel_or_reply_id, client)
+                            #await self.client_clean_and_save.disconnect()
                             self.update_with_errors(self.errors, channel_or_reply_id)
                         cleaned.append(filepath)
         self.already_cleaned.extend(cleaned)
@@ -639,7 +647,6 @@ class CleanAndSave:
             os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
         except FileExistsError:
             pass
-
         keyword_sql = ("SELECT * from posts p "
                        "WHERE date > '{}';").format(date_start)
         all_posts_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)

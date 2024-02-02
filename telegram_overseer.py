@@ -1,4 +1,5 @@
 from src import printcolors as pc
+import asyncio
 import sys
 import argparse
 import signal
@@ -144,8 +145,7 @@ commands = {
     'show_stopwords': CeS.show_custom_stopwords,
     'remove_stopwords': CeS.remove_custom_stopwords,
     'frequency': CeS.frequency,
-    'keywords_search': CeS.search_keywords,
-    'hidden_cleaning_button': CeS.cleaning_process
+    'keywords_search': CeS.search_keywords
 }
 # Set signal handler for interruption signal
 signal.signal(signal.SIGINT, signal_handler)
@@ -164,7 +164,10 @@ while True:
     _cmd = commands.get(cmd)
 
     if _cmd:
-        _cmd()
+        if asyncio.iscoroutinefunction(_cmd):  # Check if _cmd is a coroutine function
+            asyncio.run(_cmd())  # Run the coroutine
+        else:
+            _cmd()  # Call the function normally if it's not a coroutine
     elif cmd == "":
         print("")
     else:

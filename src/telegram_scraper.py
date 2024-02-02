@@ -55,22 +55,28 @@ class TelegramScraper:
     A class used to scrape and handle information from Telegram.
     """
     TZ = get_localzone_name() # Get the local timezone name
-    # Retrieve credentials from the OverseerCredentialManager to use for the Telegram Scraper
-    api_id, api_hash, phone, username = OverseerCredentialManager().retrieve_creds()
-    # Initialize the Telegram Client
-    client = TelegramClient(username, api_id=api_id, api_hash=api_hash)
 
     def __init__(self) -> None:
         """
         Constructs all the necessary attributes for the telegram scraper object.
-        Initializes the Telegram Client with provided username, api_id and api_hash.
         """
+        # Retrieve credentials from the OverseerCredentialManager to use for the Telegram Scraper
+        self.api_id, self.api_hash, self.phone, self.username = OverseerCredentialManager().retrieve_creds()
         self.end_date = None
         self.targets = [] # Initialize targets as empty list
         self.offset_date = None
         # Setting midnight timing constraint
         self.not_after_today_midnight = timezone(self.TZ).localize(
             datetime.replace(datetime.today(), hour=00, minute=00, second=00, microsecond=0000))
+        self.client_scraper = None
+
+    async def initialize_client(self):
+        """
+        Initializes the Telegram Client with provided username, api_id and api_hash.
+        """
+        if self.client_scraper is None:  # Check if client is already initialized
+            self.client_scraper = TelegramClient(self.username, api_id=self.api_id, api_hash=self.api_hash)
+            await self.client_scraper.connect()
 
     def add_targets(self) -> None:
         """
@@ -229,20 +235,17 @@ class TelegramScraper:
         -------
         None
         """
-        # Start the client
-        await self.client.connect()
         pc.printout("Client auth check initiated\n")
         # Check if user is authorized
         # If not, initiate authorization process and handle potential SessionPasswordNeededError
-        if not await self.client.is_user_authorized():
-            await self.client.send_code_request(self.phone)
+        if not await self.client_scraper.is_user_authorized():
+            await self.client_scraper.send_code_request(self.phone)
             try:
                 pc.printout('Please, enter the code you received: \n', pc.CYAN)
-                await self.client.sign_in(self.phone, input())
+                await self.client_scraper.sign_in(self.phone, input())
             except SessionPasswordNeededError:
                 pc.printout('Please, enter your password: \n', pc.CYAN)
-                await self.client.sign_in(password=input())
-        await self.client.disconnect()
+                await self.client_scraper.sign_in(password=input())
 
     async def retrieve_messages(self, target, include_replies=True) -> None:
         """
@@ -257,12 +260,11 @@ class TelegramScraper:
         None: Saves messages and, optionally, their replies in JSON files.
         """
         # Start the client
-        await self.client.connect()
-        await self.client.get_me()
+        await self.client_scraper.get_me()
         channel_name = target.split("/")[-1]
         entity = channel_name
         print(target)
-        target_channel = await self.client.get_entity(entity)
+        target_channel = await self.client_scraper.get_entity(entity)
         all_messages = []
         # Check if end date set else set to yesterday
         if not self.end_date:
@@ -285,7 +287,7 @@ class TelegramScraper:
         errors = "This messages do not have their replies retrieved:"
         pc.printout("Starting message retrieval from {}\n".format(channel_name), pc.RED)
         # Asynchronously iterate through messages and retrieve replies
-        async for message in self.client.iter_messages(target_channel,
+        async for message in self.client_scraper.iter_messages(target_channel,
                                                        reverse=True,
                                                        offset_date=self.offset_date):
             all_replies = []
@@ -294,7 +296,7 @@ class TelegramScraper:
                 if include_replies:
                     try:
                         # Gather replies for each message
-                        async for reply in self.client.iter_messages(target_channel,
+                        async for reply in self.client_scraper.iter_messages(target_channel,
                                                                      reverse=True,
                                                                      reply_to=message.id):
                             all_replies.append(reply.to_dict())
@@ -335,15 +337,14 @@ class TelegramScraper:
                     include_replies = user_input == 'yes'
                     # start retrieving messages for all targets
                     await self.retrieve_messages(target=target, include_replies=include_replies)
-                await self.client.disconnect()
                 pc.printout("Saving messages in SQLite table...\n", pc.RED)
                 clean_and_save = CleanAndSave()
-                await clean_and_save.cleaning_process()
+                await clean_and_save.cleaning_process(client=self.client_scraper)
                 pc.printout("Done!\n", pc.RED)
             except ChatAdminRequiredError:
                 pc.printout("Chat admin privileges are required to do that in the specified chat\n", pc.RED)
 
-    def main_loop_clean_and_save(self) -> None:
+    async def main_loop_clean_and_save(self) -> None:
         """
         The main loop that initiates the message retrieval and data cleaning process.
         This function is the starting point when the script is executed.
@@ -351,4 +352,6 @@ class TelegramScraper:
         Returns:
         None: Drives the overall process but does not return a value.
         """
-        self.client.loop.run_until_complete(self.retrieving_and_cleaning_messages())
+        await self.initialize_client()
+        await self.retrieving_and_cleaning_messages()
+        await self.client_scraper.disconnect()
