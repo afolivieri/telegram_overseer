@@ -9,6 +9,8 @@ Welcome to the Telegram Overseer user guide! This tool is designed for easy data
 
 ## Updates
 
+- 02/02/2024 **I fixed a disruptive bug that caused crashed at the program initialization, sorry if anyone had troubles**
+
 ### Version 1.01
 
 **Release Date:** 01/02/2024
