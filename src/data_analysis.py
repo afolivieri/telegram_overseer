@@ -654,7 +654,5 @@ class CleanAndSave:
         # Combine emoji pattern with each word in the wordlist
         combined_patterns = [f'(?:{emoji_pattern})*{word}' for word in wordlist]
         pattern = '|'.join(combined_patterns)
-        print(pattern)
         matching_posts_df = all_posts_df[all_posts_df['text'].str.contains(pattern, flags=re.IGNORECASE, regex=True, na=False)]
-        print(matching_posts_df)
         matching_posts_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)
