@@ -29,10 +29,10 @@ class CleanAndSave:
     already_cleaned = []
     errors = ""
     # Defines the columns in the SQLite database
-    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text VARCHAR, " \
+    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text BLOB, " \
                    "media_type TEXT, views INTEGER, forwards INTEGER, edit TEXT, post_url TEXT, forwarded_from TEXT"
 
-    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text VARCHAR, " \
+    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text BLOB, " \
                       "edit TEXT, reactions BLOB"
 
     dbs = ["posts", "replies"]
@@ -647,14 +647,14 @@ class CleanAndSave:
         except FileExistsError:
             pass
         keyword_sql = ("SELECT * from posts p "
-                       "WHERE date > '{}';").format(date_start)
+                       "WHERE date >= '{}';").format(date_start)
         all_posts_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
         # Pattern to match any number of emojis
         emoji_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]'
         # Combine emoji pattern with each word in the wordlist
         combined_patterns = [f'(?:{emoji_pattern})*{word}' for word in wordlist]
         pattern = '|'.join(combined_patterns)
-
+        print(pattern)
         matching_posts_df = all_posts_df[all_posts_df['text'].str.contains(pattern, flags=re.IGNORECASE, regex=True, na=False)]
-        #matching_posts_df = all_posts_df[all_posts_df['text'].str.casefold().str.contains('|'.join(wordlist))]
+        print(matching_posts_df)
         matching_posts_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)
