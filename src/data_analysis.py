@@ -642,7 +642,6 @@ class CleanAndSave:
         pc.printout("Please, give me a start date to filter the SQL database, the format should be dd/mm/yyyy\n", pc.CYAN)
         date_start = input()
         date_start = datetime.strptime(date_start, '%d/%m/%Y').strftime('%Y-%m-%d')
-        all_keywords_df = pd.DataFrame()
         try:
             os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
         except FileExistsError:
