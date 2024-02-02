@@ -634,6 +634,7 @@ class CleanAndSave:
         Returns:
         None: The function doesn't return anything but saves the resulting data as a CSV.
         """
+        current_date = datetime.today().strftime("%Y_%m_%d")
         pc.printout("This will create a table with all the posts with the matching keywords (case insensitive)\n", pc.CYAN)
         pc.printout("Please, give me a list of comma separated words you want to search\n", pc.CYAN)
         words = input()
@@ -643,7 +644,7 @@ class CleanAndSave:
         date_start = input()
         date_start = datetime.strptime(date_start, '%d/%m/%Y').strftime('%Y-%m-%d')
         try:
-            os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
+            os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(current_date))
         except FileExistsError:
             pass
         keyword_sql = ("SELECT * from posts p "
@@ -655,4 +656,9 @@ class CleanAndSave:
         combined_patterns = [f'(?:{emoji_pattern})*{word}' for word in wordlist]
         pattern = '|'.join(combined_patterns)
         matching_posts_df = all_posts_df[all_posts_df['text'].str.contains(pattern, flags=re.IGNORECASE, regex=True, na=False)]
-        matching_posts_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)
+        counter = 1
+        filename = "./graphs_data_and_visualizations/keywords/{}/keywords_{}.csv".format(current_date, counter)
+        while os.path.exists(filename):
+            counter += 1
+            filename = "./graphs_data_and_visualizations/keywords/{}/keywords_{}.csv".format(current_date, counter)
+        matching_posts_df.to_csv(filename, index=False)
