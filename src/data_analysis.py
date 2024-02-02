@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import os
+import re
 import sqlite3
 import pickle
 import numpy as np
@@ -20,14 +21,6 @@ class CleanAndSave:
     """
     Class for cleaning and saving the scraped data from Telegram.
     """
-    try:
-        os.makedirs("./cleaned_data/sql")
-    except FileExistsError:
-        pass
-    try:
-        os.makedirs("./graphs_data_and_visualizations")
-    except FileExistsError:
-        pass
     # Get local timezone
     TZ = get_localzone_name()
     # Gets current time in the local timezone
@@ -36,22 +29,33 @@ class CleanAndSave:
     already_cleaned = []
     errors = ""
     # Defines the columns in the SQLite database
-    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text BLOB, " \
+    post_columns = "channel_id INTEGER, author TEXT, message_id INTEGER, date TEXT, text VARCHAR COLLATE UNICODE_NOCASE, " \
                    "media_type TEXT, views INTEGER, forwards INTEGER, edit TEXT, post_url TEXT, forwarded_from TEXT"
 
-    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text BLOB, " \
+    replies_columns = "channel_id INTEGER, message_id INTEGER, date TEXT, text VARCHAR COLLATE UNICODE_NOCASE, " \
                       "edit TEXT, reactions BLOB"
 
     dbs = ["posts", "replies"]
     columns = [post_columns, replies_columns]
 
-    conn = sqlite3.connect("./cleaned_data/sql/overseer_target_cleaned_data.sqlite")
-    c = conn.cursor()
-    # Creates tables in the SQLite database if they don't exist already
-    for db, cols in zip(dbs, columns):
-        c.execute("CREATE TABLE IF NOT EXISTS {} ({});".format(db, cols))
-        conn.commit()
-
+    def __init__(self):
+        # Create directories if they don't exist
+        try:
+            os.makedirs("./cleaned_data/sql")
+        except FileExistsError:
+            pass
+        try:
+            os.makedirs("./graphs_data_and_visualizations")
+        except FileExistsError:
+            pass
+        # Connect to SQLite and set up custom collation
+        self.conn = sqlite3.connect("./cleaned_data/sql/overseer_target_cleaned_data.sqlite")
+        self.c = self.conn.cursor()
+        # Creates tables in the SQLite database if they don't exist already
+        for db, cols in zip(self.dbs, self.columns):
+            self.c.execute("CREATE TABLE IF NOT EXISTS {} ({});".format(db, cols))
+            self.conn.commit()
+    # Initialize Telegram client
     api_id, api_hash, phone, username = OverseerCredentialManager().retrieve_creds()
     client = TelegramClient(username, api_id=api_id, api_hash=api_hash)
 
@@ -143,10 +147,12 @@ class CleanAndSave:
             channel_id = self.extract_data(from_id, "channel_id")
             if not self.client.is_connected():
                 await self.client.connect()
-            entity = await self.client.get_entity(channel_id)
-            await self.client.disconnect()
-            channel_name = entity.username
-            original_url = "https://t.me/{}/{}".format(channel_name, message_id)
+            try:
+                entity = await self.client.get_entity(channel_id)
+                channel_name = entity.username
+                original_url = "https://t.me/{}/{}".format(channel_name, message_id)
+            except ValueError:
+                original_url = "channel name not found"
         else:
             original_url = "not a forwarded post"
         return original_url
@@ -623,7 +629,7 @@ class CleanAndSave:
         pc.printout("This will create a table with all the posts with the matching keywords (case insensitive)\n", pc.CYAN)
         pc.printout("Please, give me a list of comma separated words you want to search\n", pc.CYAN)
         words = input()
-        wordlist = [word.strip() for word in words.split(",")]
+        wordlist = [word.strip().casefold() for word in words.split(",")]
 
         pc.printout("Please, give me a start date to filter the SQL database, the format should be dd/mm/yyyy\n", pc.CYAN)
         date_start = input()
@@ -633,11 +639,15 @@ class CleanAndSave:
             os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(self.now))
         except FileExistsError:
             pass
-        for word in wordlist:
-            keyword_sql =   ("SELECT * from posts p "
-                             "WHERE text LIKE '%{}%'"
-                             "AND date > {};").format(word, date_start)
-            keyword_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
-            all_keywords_df = pd.concat([all_keywords_df, keyword_df], ignore_index=True)
-        all_keywords_df.drop_duplicates(inplace=True)
-        all_keywords_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)
+        keyword_sql = ("SELECT * from posts p "
+                       "WHERE date > '{}';").format(date_start)
+        all_posts_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
+        # Pattern to match any number of emojis
+        emoji_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]'
+        # Combine emoji pattern with each word in the wordlist
+        combined_patterns = [f'(?:{emoji_pattern})*{word}' for word in wordlist]
+        pattern = '|'.join(combined_patterns)
+
+        matching_posts_df = all_posts_df[all_posts_df['text'].str.contains(pattern, flags=re.IGNORECASE, regex=True, na=False)]
+        #matching_posts_df = all_posts_df[all_posts_df['text'].str.casefold().str.contains('|'.join(wordlist))]
+        matching_posts_df.to_csv("./graphs_data_and_visualizations/keywords/{}/keywords.csv".format(self.now), index=False)
