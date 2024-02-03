@@ -632,9 +632,6 @@ class CleanAndSave:
         """
         if pd.isna(text):
             return False
-        print(pattern)
-        test = regex.search(pattern, text, flags=regex.IGNORECASE)
-        print(test)
         return regex.search(pattern, text, flags=regex.IGNORECASE) is not None
 
     def search_keywords(self) -> None:
