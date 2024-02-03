@@ -22,7 +22,11 @@ Welcome to the Telegram Overseer user guide! This tool is designed for easy data
 
 2. **Keywords Search Functionality:**
    - A new feature, 'Keywords Search', has been added. This allows users to search for specific keywords within posts in a case-insensitive manner, enhancing the tool's analytical capabilities.
-
+   - #### How to Use:
+     1. Enter a list of comma-separated keywords. If a keyword ends with an asterisk `*`, the search will include variations of the word with up to three additional characters. 
+     2. Provide a start date to filter the SQL database.
+     3. The tool will generate a CSV file containing all posts that match the given keywords and date criteria. The CSV file will be saved in the `./graphs_data_and_visualizations/keywords/{current_date}` directory, where `{current_date}` is the date of the search.
+   - This feature is particularly useful for analyzing the presence of specific topics or terms within the Telegram channel data.
 3. **Optional Replies Retrieval Flag:**
    - Users now have the option to include or exclude replies when retrieving messages. This makes the data collection process more flexible and tailored to specific analysis needs.
 

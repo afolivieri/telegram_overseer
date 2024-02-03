@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 import os
-import re
+import regex
 import sqlite3
 import pickle
 import numpy as np
@@ -624,6 +624,19 @@ class CleanAndSave:
                          .format(author, self.now, author), index=False)
         pc.printout("Done!\n", pc.CYAN)
 
+    @staticmethod
+    def match_regex(text, pattern):
+        """
+        Determines if a given text matches a specific regex pattern.
+        This method is particularly useful for performing complex pattern searches in text data, including case-insensitive matches for both ASCII and non-ASCII characters.
+        """
+        if pd.isna(text):
+            return False
+        print(pattern)
+        test = regex.search(pattern, text, flags=regex.IGNORECASE)
+        print(test)
+        return regex.search(pattern, text, flags=regex.IGNORECASE) is not None
+
     def search_keywords(self) -> None:
         """
         Creates a table with all posts containing specified keywords.
@@ -653,9 +666,17 @@ class CleanAndSave:
         # Pattern to match any number of emojis
         emoji_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]'
         # Combine emoji pattern with each word in the wordlist
-        combined_patterns = [f'(?:{emoji_pattern})*{word}' for word in wordlist]
+        combined_patterns = []
+        for word in wordlist:
+            if word.endswith('*'):
+                word = word[:-1]  # Remove the asterisk
+                pattern = r'(?i)(?:{})*{}\p{{L}}{{0,3}}'.format(emoji_pattern, word)  # Match word with 0 to 3 extra characters
+            else:
+                pattern = r'(?i)(?:{})*{}'.format(emoji_pattern, word)
+            combined_patterns.append(pattern)
         pattern = '|'.join(combined_patterns)
-        matching_posts_df = all_posts_df[all_posts_df['text'].str.contains(pattern, flags=re.IGNORECASE, regex=True, na=False)]
+        mask = all_posts_df['text'].apply(lambda x: self.match_regex(x, pattern))
+        matching_posts_df = all_posts_df[mask]
         counter = 1
         filename = "./graphs_data_and_visualizations/keywords/{}/keywords_{}.csv".format(current_date, counter)
         while os.path.exists(filename):
