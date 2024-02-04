@@ -1,3 +1,4 @@
+import asyncio
 import pandas as pd
 import json
 import os
@@ -6,15 +7,13 @@ import sqlite3
 import pickle
 import numpy as np
 import pandas.errors
-from tqdm import tqdm
 import src.printcolors as pc
 from tzlocal import get_localzone_name
 from datetime import datetime
 from pytz import timezone, utc
 from stop_words import get_stop_words
 from wordcloud import WordCloud
-# from src.credential_handler import OverseerCredentialManager
-# from telethon import TelegramClient
+from telethon.errors.rpcerrorlist import ChannelPrivateError
 
 
 class CleanAndSave:
@@ -55,16 +54,7 @@ class CleanAndSave:
         for db, cols in zip(self.dbs, self.columns):
             self.c.execute("CREATE TABLE IF NOT EXISTS {} ({});".format(db, cols))
             self.conn.commit()
-    """
-        self.client_clean_and_save = None
 
-    async def initialize_client(self):
-
-        if self.client_clean_and_save is None:  # Check if client is already initialized
-            self.api_id, self.api_hash, self.phone, self.username = OverseerCredentialManager().retrieve_creds()
-            self.client_clean_and_save = TelegramClient(self.username, api_id=self.api_id, api_hash=self.api_hash)
-            await self.client_clean_and_save.connect()
-"""
     @staticmethod
     def extract_data(data, *args) -> tuple:
         """
@@ -101,7 +91,7 @@ class CleanAndSave:
         """
         Loads the cleaned file, if exists.
         """
-        if os.path.exists("./cleaned_data/already_cleaned.pkl"):
+        if os.path.exists("./cleaned_data/already_cleaned.pk"):
             with open("./cleaned_data/already_cleaned.pk", "rb") as file:
                 self.already_cleaned = pickle.load(file)
 
@@ -154,11 +144,17 @@ class CleanAndSave:
             if not client.is_connected():
                 await client.connect()
             try:
-                entity = await client.get_entity(channel_id)
+                entity = await asyncio.wait_for(client.get_entity(channel_id), timeout=0.5)
                 channel_name = entity.username
                 original_url = "https://t.me/{}/{}".format(channel_name, message_id)
             except ValueError:
                 original_url = "channel name not found"
+            except ChannelPrivateError:
+                original_url = "channel is private"
+            except asyncio.TimeoutError:
+                original_url = "channel took too long to respond"
+            except TypeError:
+                original_url = "not a forwarded post"
         else:
             original_url = "not a forwarded post"
         return original_url
@@ -257,11 +253,7 @@ class CleanAndSave:
         """
         self.load_cleaned_file()
         cleaned = []
-        for root, dirs, files in tqdm(os.walk("./output"),
-                                      leave=False,
-                                      bar_format="{desc:<33.33}{percentage:3.0f}%|{bar:50}{r_bar}",
-                                      desc="Cleaning Data"
-                                      ):
+        for root, dirs, files in os.walk("./output"):
             if files:
                 for file in files:
                     filepath = os.path.join(root, file)
@@ -279,9 +271,7 @@ class CleanAndSave:
                             self.replies_clean_and_save(filepath, channel_id, channel_or_reply_id)
                         else:
                             author = os.path.split(os.path.split(root)[0])[1].replace("channel_name_", "")
-                            #await self.initialize_client()
                             await self.post_clean_and_save(filepath, author, channel_or_reply_id, client)
-                            #await self.client_clean_and_save.disconnect()
                             self.update_with_errors(self.errors, channel_or_reply_id)
                         cleaned.append(filepath)
         self.already_cleaned.extend(cleaned)
@@ -328,14 +318,14 @@ class CleanAndSave:
 
     def update_with_errors(self, errors, channel_id) -> None:
         """
-    This method updates posts in the database that have no text and are potentially deleted or
-    simply contain media with a placeholder string.
+        This method updates posts in the database that have no text and are potentially deleted or
+        simply contain media with a placeholder string.
 
-    Parameters:
-    errors (str): A string of concatenated message IDs from the post cleaning function
-    where an error occurred potentially due to the post being deleted or only containing media.
-    channel_id (str): The ID of the Telegram channel.
-    """
+        Parameters:
+        errors (str): A string of concatenated message IDs from the post cleaning function
+        where an error occurred potentially due to the post being deleted or only containing media.
+        channel_id (str): The ID of the Telegram channel.
+        """
         self.c.execute("UPDATE posts SET text = 'Message with no text or replies, could be deleted or just media' "
                        "WHERE (text = '' AND message_id IN ({}) AND channel_id IS {})".format(errors, channel_id))
         self.conn.commit()
