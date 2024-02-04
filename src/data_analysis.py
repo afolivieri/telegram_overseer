@@ -56,7 +56,7 @@ class CleanAndSave:
             self.conn.commit()
 
     @staticmethod
-    def extract_data(data, *args) -> tuple:
+    def extract_data(data, *args) -> tuple | float:
         """
         Extracts the needed data from the given data args.
 
@@ -278,7 +278,7 @@ class CleanAndSave:
         with open("./cleaned_data/already_cleaned.pk", "wb") as file:
             pickle.dump(self.already_cleaned, file)
 
-    def create_full_replies_view(self):
+    def create_full_replies_view(self) -> None:
         """
         This function creates a SQL view named "full_replies" that unifies posts and replies data for
         easier data handling and retrieval.
@@ -373,7 +373,7 @@ class CleanAndSave:
                              .format(self.now, number_of_tweets, author), index=False, encoding='utf-8')
         pc.printout("Done!\n", pc.CYAN)
 
-    def reaction_data(self) ->None:
+    def reaction_data(self) -> None:
         """
         This function loads the reactions data and saves it into a new SQLite database
         table called "reaction_analysis". The reaction data shows how many of each reaction
@@ -414,7 +414,7 @@ class CleanAndSave:
         pc.printout("Done!\n", pc.CYAN)
 
     @staticmethod
-    def add_stopwords() ->None:
+    def add_stopwords() -> None:
         """
         This function is used to add custom stopwords to the text analysis process.
         """
@@ -436,7 +436,7 @@ class CleanAndSave:
                 pickle.dump(sorted(new_stop_words), file)
 
     @staticmethod
-    def show_custom_stopwords() ->None:
+    def show_custom_stopwords() -> None:
         """
         This function shows the current list of custom stopwords.
         """
@@ -450,7 +450,7 @@ class CleanAndSave:
             print("\n")
 
     @staticmethod
-    def remove_custom_stopwords() ->None:
+    def remove_custom_stopwords() -> None:
         """
         This function removes words from the custom stopwords list.
         """
@@ -471,7 +471,7 @@ class CleanAndSave:
             with open("./graphs_data_and_visualizations/wordcloud/custom_stopwords/stopwords_list.pkl", "wb") as file:
                 pickle.dump(sorted(stop_words_list), file)
 
-    def wordclouds(self) ->None:
+    def wordclouds(self) -> None:
         """
         This function creates two Wordcloud images: one from just the author's posts and another from
         the author's posts and the replies together. It first sets up a directory for storing the Wordcloud
