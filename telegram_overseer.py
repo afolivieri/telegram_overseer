@@ -1,18 +1,12 @@
 from src import printcolors as pc
 import asyncio
-import sys
-import argparse
-import signal
 from src.credential_handler import OverseerCredentialManager
 from src.telegram_scraper import TelegramScraper
 from src.data_analysis import CleanAndSave
+from prompt_toolkit import PromptSession
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.styles import Style
 
-# Check if the current operating system is Windows
-is_windows = sys.platform.startswith('win')
-if is_windows:
-    from pyreadline3.rlmain import BaseReadline as PyRdl
-else:
-    import gnureadline
 
 # A function to display the welcome banner at the start of the program
 def welcome() -> None:
@@ -86,10 +80,6 @@ def cmdlist() -> None:
     pc.printout("keywords_search\t\t")
     pc.printout("Save the posts containing the keyword in an excel spreadsheet, needs a start date\n", colour=pc.YELLOW)
 
-# A function to handle system signals
-def signal_handler(sig: object, frame: object) -> None:
-    pc.printout("\nGoodbye!\n", pc.RED)
-    sys.exit(0)
 
 # A completer function for command completion
 def completer(text: str, state: int) -> str or None:
@@ -102,15 +92,8 @@ def completer(text: str, state: int) -> str or None:
 # A function to exit program
 def _quit() -> None:
     pc.printout("Goodbye!\n", pc.RED)
-    sys.exit(0)
+    exit(0)
 
-# Display welcome message
-welcome()
-# Initialize the argument parser
-parser = argparse.ArgumentParser(description="Description")
-parser.add_argument('-t', '--targets', type=str, nargs='+',
-                    help='target identificator, single or whitespace separated list')
-args = parser.parse_args()
 # Instantiate required classes
 OverseerCred = OverseerCredentialManager()
 TScap = TelegramScraper()
@@ -147,28 +130,51 @@ commands = {
     'frequency': CeS.frequency,
     'keywords_search': CeS.search_keywords
 }
-# Set signal handler for interruption signal
-signal.signal(signal.SIGINT, signal_handler)
-if is_windows:
-    pyreadline_instance = PyRdl()
-    pyreadline_instance.parse_and_bind("tab: complete")
-    pyreadline_instance.set_completer(completer)
-else:
-    gnureadline.parse_and_bind("tab: complete")
-    gnureadline.set_completer(completer)
-# Main program loop
-while True:
-    pc.printout("Run a command: ", pc.YELLOW)
-    cmd = input()
 
+command_completer = WordCompleter(['list', 'help', 'quit', 'exit', 'credentials', 'set_api_id', 'set_api_hash',
+                                   'set_phone_number', 'set_username', 'targets', 'set_targets', 'reset_targets',
+                                   'save_targets', 'load_targets', 'date', 'set_start_date', 'set_end_date',
+                                   'reset_date', 'retrieve_messages', 'delete_double_data', 'full_replies_view',
+                                   'engagement', 'reaction_data', 'wordclouds', 'add_stopwords', 'show_stopwords',
+                                   'remove_stopwords', 'frequency', 'keywords_search'], ignore_case=True)
+
+# Define your CLI style (optional)
+style = Style.from_dict({'': '#ffffff', 'completion-menu.completion': 'bg:#008888 #ffffff',
+                         'completion-menu.completion.current': 'bg:#00aaaa #000000',
+                         'scrollbar.background': 'bg:#88aaaa', 'scrollbar.button': 'bg:#222222',})
+
+# Initialize PromptSession
+session = PromptSession(completer=command_completer, style=style)
+
+# Command execution function
+def execute_command(cmd):
     _cmd = commands.get(cmd)
-
     if _cmd:
-        if asyncio.iscoroutinefunction(_cmd):  # Check if _cmd is a coroutine function
-            asyncio.run(_cmd())  # Run the coroutine
+        if asyncio.iscoroutinefunction(_cmd):
+            asyncio.run(_cmd())
         else:
-            _cmd()  # Call the function normally if it's not a coroutine
+            _cmd()
     elif cmd == "":
         print("")
     else:
         pc.printout("Unknown command\n", pc.RED)
+
+# Main program loop using prompt_toolkit
+def main():
+    welcome()
+    while True:
+        try:
+            # Get user input using prompt_toolkit
+            cmd = session.prompt("Run a command: ", style=style)
+            execute_command(cmd)
+        except KeyboardInterrupt:
+            # Handle Ctrl+C gracefully
+            pc.printout("\nGoodbye!\n", pc.RED)
+            break
+        except EOFError:
+            # Handle Ctrl+D gracefully
+            pc.printout("\nGoodbye!\n", pc.RED)
+            break
+
+if __name__ == "__main__":
+    main()

@@ -625,14 +625,18 @@ class CleanAndSave:
         pc.printout("Done!\n", pc.CYAN)
 
     @staticmethod
-    def match_regex(text, pattern):
+    def match_regex(text, patterns):
         """
-        Determines if a given text matches a specific regex pattern.
+        Determines the words from the patterns that match a given text and returns them.
         This method is particularly useful for performing complex pattern searches in text data, including case-insensitive matches for both ASCII and non-ASCII characters.
         """
         if pd.isna(text):
-            return False
-        return regex.search(pattern, text, flags=regex.IGNORECASE) is not None
+            return None
+        matched_words = []
+        for word, pattern in patterns.items():
+            if regex.search(pattern, text, flags=regex.IGNORECASE):
+                matched_words.append(word)
+        return ', '.join(matched_words) if matched_words else None
 
     def search_keywords(self) -> None:
         """
@@ -662,18 +666,20 @@ class CleanAndSave:
         all_posts_df = pd.read_sql_query(sql=keyword_sql, con=self.conn)
         # Pattern to match any number of emojis
         emoji_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]'
-        # Combine emoji pattern with each word in the wordlist
-        combined_patterns = []
+        # Create a dictionary to map each word to its pattern
+        word_patterns = {}
         for word in wordlist:
             if word.endswith('*'):
                 word = word[:-1]  # Remove the asterisk
                 pattern = r'(?i)(?:{})*{}\p{{L}}{{0,3}}'.format(emoji_pattern, word)  # Match word with 0 to 3 extra characters
+                word_patterns[word] = pattern
             else:
                 pattern = r'(?i)(?:{})*{}'.format(emoji_pattern, word)
-            combined_patterns.append(pattern)
-        pattern = '|'.join(combined_patterns)
-        mask = all_posts_df['text'].apply(lambda x: self.match_regex(x, pattern))
-        matching_posts_df = all_posts_df[mask]
+                word_patterns[word] = pattern
+        # Apply match_regex and store results in a new column
+        all_posts_df['matched_keywords'] = all_posts_df['text'].apply(lambda x: self.match_regex(x, word_patterns))
+        # Filter rows where matched_keywords is not None
+        matching_posts_df = all_posts_df[all_posts_df['matched_keywords'].notna()]
         counter = 1
         filename = "./graphs_data_and_visualizations/keywords/{}/keywords_{}.csv".format(current_date, counter)
         while os.path.exists(filename):
