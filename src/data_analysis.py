@@ -308,12 +308,30 @@ class CleanAndSave:
         """
         self.c.execute("DROP VIEW IF EXISTS full_replies")
         self.conn.commit()
-        for table in ("posts", "replies", "post_reaction_table"):
-            self.c.execute("CREATE TABLE temp_{} AS SELECT DISTINCT * FROM {}".format(table, table))
-            self.c.execute("DROP TABLE {}".format(table))
-            self.c.execute("ALTER TABLE temp_{} RENAME TO {}".format(table, table))
-            self.c.execute("DROP TABLE IF EXISTS temp_{}".format(table))
-            self.conn.commit()
+        self.c.execute("WITH RankedPosts AS ( "
+                       "SELECT *, ROW_NUMBER() OVER( "
+                       "PARTITION BY message_id, date, text, post_url "
+                       "ORDER BY date DESC, views DESC, forwards DESC, edit DESC "
+                       ") AS rn FROM posts) "
+                       "DELETE FROM posts "
+                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+        self.conn.commit()
+        self.c.execute("WITH RankedPosts AS ( "
+                       "SELECT *, ROW_NUMBER() OVER( "
+                       "PARTITION BY channel_id, message_id "
+                       "ORDER BY channel_id DESC, message_id DESC, total DESC "
+                       ") AS rn FROM post_reaction_table) "
+                       "DELETE FROM post_reaction_table "
+                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+        self.conn.commit()
+        self.c.execute("WITH RankedPosts AS ( "
+                       "SELECT *, ROW_NUMBER() OVER( "
+                       "PARTITION BY channel_id, message_id, text, date "
+                       "ORDER BY channel_id DESC, message_id DESC, text DESC, date DESC "
+                       ") AS rn FROM replies) "
+                       "DELETE FROM replies "
+                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+        self.conn.commit()
         self.create_full_replies_view()
 
     def update_with_errors(self, errors, channel_id) -> None:
