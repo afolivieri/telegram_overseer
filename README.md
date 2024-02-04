@@ -107,9 +107,7 @@ Virtual environments in Python are used to manage project-specific dependencies.
 After setting up and activating the virtual environment, you need to install the project dependencies.
 
 1. Ensure you are in the project directory where the `requirements.txt` file is located.
-2. Depending on your operating system, run one of the following commands:
-   - On Windows: `pip install -r requirements_windows.txt`
-   - On Linux: `pip install -r requirements.txt`
+2. Run the following command: `pip install -r requirements.txt`
 
 This will install all the necessary libraries and packages needed to run Telegram Overseer.
 
