@@ -314,7 +314,7 @@ class CleanAndSave:
                        "ORDER BY date DESC, views DESC, forwards DESC, edit DESC "
                        ") AS rn FROM posts) "
                        "DELETE FROM posts "
-                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+                       "WHERE EXISTS (SELECT 1 FROM RankedPosts WHERE RankedPosts.message_id = posts.message_id AND rn > 1);")
         self.conn.commit()
         self.c.execute("WITH RankedPosts AS ( "
                        "SELECT *, ROW_NUMBER() OVER( "
@@ -322,7 +322,7 @@ class CleanAndSave:
                        "ORDER BY channel_id DESC, message_id DESC, total DESC "
                        ") AS rn FROM post_reaction_table) "
                        "DELETE FROM post_reaction_table "
-                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+                       "WHERE EXISTS (SELECT 1 FROM RankedPosts WHERE RankedPosts.message_id = post_reaction_table.message_id AND rn > 1);")
         self.conn.commit()
         self.c.execute("WITH RankedPosts AS ( "
                        "SELECT *, ROW_NUMBER() OVER( "
@@ -330,7 +330,7 @@ class CleanAndSave:
                        "ORDER BY channel_id DESC, message_id DESC, text DESC, date DESC "
                        ") AS rn FROM replies) "
                        "DELETE FROM replies "
-                       "WHERE ROWID IN (SELECT ROWID FROM RankedPosts WHERE rn > 1);")
+                       "WHERE EXISTS (SELECT 1 FROM RankedPosts WHERE RankedPosts.message_id = replies.message_id AND rn > 1);")
         self.conn.commit()
         self.create_full_replies_view()
 
