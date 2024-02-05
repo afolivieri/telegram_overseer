@@ -677,13 +677,21 @@ class CleanAndSave:
         # Create a dictionary to map each word to its pattern
         word_patterns = {}
         for word in wordlist:
-            if word.endswith('*'):
+            if word.endswith('**'):
+                word = word[:-2]  # Remove the asterisks
+                pattern = r'(?i)(?:{})*{}\p{{L}}{{0,6}}'.format(emoji_pattern, word)  # Match word with 0 to 6 extra characters
+            elif word.endswith('*'):
                 word = word[:-1]  # Remove the asterisk
                 pattern = r'(?i)(?:{})*{}\p{{L}}{{0,3}}'.format(emoji_pattern, word)  # Match word with 0 to 3 extra characters
-                word_patterns[word] = pattern
+            elif word.startswith('##'):
+                word = word[2:]  # Remove the hashes
+                pattern = r'(?i)(?:{})*{}\d{{0,6}}'.format(emoji_pattern, word)  # Match word with 0 to 6 digits
+            elif word.startswith('#'):
+                word = word[1:]  # Remove the hash
+                pattern = r'(?i)(?:{})*{}\d{{0,3}}'.format(emoji_pattern, word)  # Match word with 0 to 3 digits
             else:
                 pattern = r'(?i)(?:{})*{}'.format(emoji_pattern, word)
-                word_patterns[word] = pattern
+            word_patterns[word] = pattern
         # Apply match_regex and store results in a new column
         all_posts_df['matched_keywords'] = all_posts_df['text'].apply(lambda x: self.match_regex(x, word_patterns))
         # Filter rows where matched_keywords is not None
