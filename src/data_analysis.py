@@ -633,18 +633,21 @@ class CleanAndSave:
         pc.printout("Done!\n", pc.CYAN)
 
     @staticmethod
-    def match_regex(text, patterns):
+    def match_regex(text, patterns, context_delimiter='\n@@\n'):
         """
         Determines the words from the patterns that match a given text and returns them.
         This method is particularly useful for performing complex pattern searches in text data, including case-insensitive matches for both ASCII and non-ASCII characters.
         """
         if pd.isna(text):
-            return None
+            return None, None
         matched_words = []
+        context_snippets = []
         for word, pattern in patterns.items():
-            if regex.search(pattern, text, flags=regex.IGNORECASE):
+            for match in regex.finditer(pattern, text, flags=regex.IGNORECASE):
                 matched_words.append(word)
-        return ', '.join(matched_words) if matched_words else None
+                start, end = max(0, match.start() - 20), min(len(text), match.end() + 20)
+                context_snippets.append(text[start:end])
+        return ', '.join(matched_words) if matched_words else None, context_delimiter.join(context_snippets) if context_snippets else None
 
     def search_keywords(self) -> None:
         """
@@ -693,7 +696,12 @@ class CleanAndSave:
                 pattern = r'(?i)(?:{})*{}'.format(emoji_pattern, word)
             word_patterns[word] = pattern
         # Apply match_regex and store results in a new column
-        all_posts_df['matched_keywords'] = all_posts_df['text'].apply(lambda x: self.match_regex(x, word_patterns))
+        column_order = ['channel_id', 'author',	'message_id', 'date', 'text', 'matched_keywords',
+                        'context', 'media_type', 'views', 'forwards', 'edit', 'post_url', 'forwarded_from']
+        all_posts_df[['matched_keywords', 'context']] = (
+            all_posts_df['text'].apply(lambda x: pd.Series(self.match_regex(x, word_patterns), dtype=object)))
+        # Reorder the columns
+        all_posts_df = all_posts_df[column_order]
         # Filter rows where matched_keywords is not None
         matching_posts_df = all_posts_df[all_posts_df['matched_keywords'].notna()]
         counter = 1

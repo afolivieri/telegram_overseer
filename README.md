@@ -10,7 +10,7 @@ Welcome to the Telegram Overseer user guide! This tool is designed for easy data
 ## Updates
 
 - 02/02/2024 **I fixed a disruptive bug that caused crashed at the program initialization, sorry if anyone had troubles**
-
+- 05/02/2024 **The search_keywords function now includes additional context in the output CSV. For every matched keyword, a snippet of text surrounding the match is provided to give more insight into the data.**
 ### Version 1.01
 
 **Release Date:** 01/02/2024
@@ -190,6 +190,9 @@ The Telegram Overseer tool offers a variety of commands to manage credentials, t
        - A double asterisk `**` at the end of a keyword extends the variation to up to six additional characters.
        - A hashtag `#` at the start of a keyword includes a numeric match of up to three digits.
        - A double hashtag `##` at the start of a keyword extends the numeric match to up to six digits.
+  - The context is set to 20 characters before and after the keyword match.
+  - Matches are separated by "@@" to easily distinguish between multiple matches within the text column.
+  - The column order has been updated to place `matched_keywords` and `context` immediately after the `text` column for more intuitive data analysis.
   - The matching posts are then saved in a CSV file named `keywords_[current_date]_[incremental_number].csv` within the `./graphs_data_and_visualizations/keywords/[current_date]/` directory. `[current_date]` is the date of the search, and `[incremental_number]` is an auto-incrementing number that ensures each search result is saved in a unique file.
   - The CSV file contains all posts that match the given keywords and date criteria, including an additional column `matched_keywords` which lists the keywords found in each post.
 
