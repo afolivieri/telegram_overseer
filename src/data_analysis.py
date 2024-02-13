@@ -669,7 +669,7 @@ class CleanAndSave:
         date_start = input()
         date_start = datetime.strptime(date_start, '%d/%m/%Y').strftime('%Y-%m-%d')
 
-        pc.printout("Enter the context match length (default is 20 characters):", pc.CYAN)
+        pc.printout("Enter the context match length (default is 20 characters):\n", pc.CYAN)
         match_len_input = input()  # User inputs match length
         match_len = int(match_len_input) if match_len_input.isdigit() else 20
 
