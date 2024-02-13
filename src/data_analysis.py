@@ -633,7 +633,7 @@ class CleanAndSave:
         pc.printout("Done!\n", pc.CYAN)
 
     @staticmethod
-    def match_regex(text, patterns, context_delimiter='\n@@\n'):
+    def match_regex(text, patterns, match_len=20, context_delimiter='\n@@\n'):
         """
         Determines the words from the patterns that match a given text and returns them.
         This method is particularly useful for performing complex pattern searches in text data, including case-insensitive matches for both ASCII and non-ASCII characters.
@@ -645,7 +645,7 @@ class CleanAndSave:
         for word, pattern in patterns.items():
             for match in regex.finditer(pattern, text, flags=regex.IGNORECASE):
                 matched_words.append(word)
-                start, end = max(0, match.start() - 20), min(len(text), match.end() + 20)
+                start, end = max(0, match.start() - match_len), min(len(text), match.end() + match_len)
                 context_snippets.append(text[start:end])
         return ', '.join(matched_words) if matched_words else None, context_delimiter.join(context_snippets) if context_snippets else None
 
@@ -668,6 +668,11 @@ class CleanAndSave:
         pc.printout("Please, give me a start date to filter the SQL database, the format should be dd/mm/yyyy\n", pc.CYAN)
         date_start = input()
         date_start = datetime.strptime(date_start, '%d/%m/%Y').strftime('%Y-%m-%d')
+
+        print("Enter the context match length (default is 20 characters):")
+        match_len_input = input()  # User inputs match length
+        match_len = int(match_len_input) if match_len_input.isdigit() else 20
+
         try:
             os.makedirs("./graphs_data_and_visualizations/keywords/{}".format(current_date))
         except FileExistsError:
@@ -699,7 +704,7 @@ class CleanAndSave:
         column_order = ['channel_id', 'author',	'message_id', 'date', 'text', 'matched_keywords',
                         'context', 'media_type', 'views', 'forwards', 'edit', 'post_url', 'forwarded_from']
         all_posts_df[['matched_keywords', 'context']] = (
-            all_posts_df['text'].apply(lambda x: pd.Series(self.match_regex(x, word_patterns), dtype=object)))
+            all_posts_df['text'].apply(lambda x: pd.Series(self.match_regex(x, word_patterns, match_len=match_len), dtype=object)))
         # Reorder the columns
         all_posts_df = all_posts_df[column_order]
         # Filter rows where matched_keywords is not None
