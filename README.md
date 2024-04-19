@@ -85,7 +85,7 @@ Ensure Python is installed on your system. You can download it from the [officia
 4. **Installing Dependencies in PyCharm**:
    - In the `Terminal` tab at the bottom of PyCharm, ensure you're in the project directory.
    - Activate your virtual environment (the method varies by OS).
-   - Run `pip install -r requirements.txt` (or `requirements_windows.txt` for Windows) to install dependencies.
+   - Run `pip install -r requirements.txt` to install dependencies.
 
 5. **Running the Script in PyCharm**:
    - In the PyCharm Project Explorer, right-click on `telegram_overseer.py`.
