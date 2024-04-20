@@ -561,8 +561,8 @@ class CleanAndSave:
                 count_dict[i] = 1
         count_df = pd.DataFrame.from_dict([count_dict]).T
         count_df.reset_index(inplace=True)
-        count_df.columns = [colname, "occurrencies"]
-        count_df.sort_values(by="occurrencies", ascending=False, inplace=True)
+        count_df.columns = [colname, "occurrences"]
+        count_df.sort_values(by="occurrences", ascending=False, inplace=True)
         return count_df
 
     @staticmethod
@@ -607,8 +607,8 @@ class CleanAndSave:
         It saves these tables in .csv format in the directory './graphs_data_and_visualizations/frequency/{author}/{self.now}/' or,
         for the general overview in './graphs_data_and_visualizations/frequency/general_overview/'.
         """
-        pc.printout("This will create two tables for each target containing the daily and weekly frequency of posts,"
-                    "and a general overview\n", pc.CYAN)
+        pc.printout("Initiating frequency analysis: This process will generate hourly and weekly frequency tables "
+                    "for each author, as well as a general overview.\n", pc.CYAN)
         os.makedirs("./graphs_data_and_visualizations/frequency/general_overview", exist_ok=True)
 
         # General overview
@@ -634,12 +634,12 @@ class CleanAndSave:
             HH_df = self.fill_df(HH_df, "daily", "24_hours_UTC_frequency")
             AA_df = self.fill_df(AA_df, "weekly", "weekly_frequency")
             # Calculate percentages
-            HH_df["24_hours_UTC_percentage"] = round((HH_df["occurrencies"] / HH_df[
-                "occurrencies"].sum()) * 100, 1)
-            AA_df["weekly_percentage"] = round((AA_df["occurrencies"] / AA_df["occurrencies"].sum()) * 100, 1)
+            HH_df["24_hours_UTC_percentage"] = round((HH_df["occurrences"] / HH_df[
+                "occurrences"].sum()) * 100, 1)
+            AA_df["weekly_percentage"] = round((AA_df["occurrences"] / AA_df["occurrences"].sum()) * 100, 1)
             HH_df.to_csv("./graphs_data_and_visualizations/frequency/{}/{}/{}_UTC_hourly_frequency.csv"
                          .format(author, self.now, author), index=False)
-            AA_df.to_csv("./graphs_data_and_visualizations/frequency/{}/{}/{}_weekly_daily_frequency.csv"
+            AA_df.to_csv("./graphs_data_and_visualizations/frequency/{}/{}/{}_weekly_frequency.csv"
                          .format(author, self.now, author), index=False)
         pc.printout("Done!\n", pc.CYAN)
 

@@ -9,32 +9,34 @@ Welcome to the Telegram Overseer user guide! This tool is designed for easy data
 
 ## Updates
 
-- 02/02/2024 **I fixed a disruptive bug that caused crashed at the program initialization, sorry if anyone had troubles**
-- 05/02/2024 **The search_keywords function now includes additional context in the output CSV. For every matched keyword, a snippet of text surrounding the match is provided to give more insight into the data.**
+- **02/02/2024**: Fixed a disruptive bug that caused crashes at program initialization. Apologies for any inconvenience caused.
+- **05/02/2024**: Enhanced the `search_keywords` function to include context snippets in the output CSV. For every matched keyword, a snippet of text surrounding the match is provided, offering more insight into the data.
+- **20/04/2024**: Added frequency calculation and CSV export for daily and weekly post frequencies. A general overview is now available in `./graphs_data_and_visualizations/frequency/general_overview/{self.now}_general.csv`.
+
 ### Version 1.01
 
 **Release Date:** 01/02/2024
 
 **Major Changes:**
 
-1. **SQL Table Structure Changes:**
-   - The SQL database structure has been updated. These changes are not backward compatible with previous versions. Users are advised to start a fresh database setup to accommodate these changes.
+1. **SQL Table Structure Updates:**
+   - Updated the SQL database structure for improved performance and scalability. **Note:** These changes are not backward compatible with previous versions. Users are advised to set up a new database.
 
-2. **Keywords Search Functionality:**
-   - A new feature, 'Keywords Search', has been added. This allows users to search for specific keywords within posts in a case-insensitive manner, enhancing the tool's analytical capabilities.
-   - #### How to Use:
-     1. Enter a list of comma-separated keywords. If a keyword ends with an asterisk `*`, the search will include variations of the word with up to three additional characters. 
-     2. Provide a start date to filter the SQL database.
-     3. The tool will generate a CSV file containing all posts that match the given keywords and date criteria. The CSV file will be saved in the `./graphs_data_and_visualizations/keywords/{current_date}` directory, where `{current_date}` is the date of the search.
-   - This feature is particularly useful for analyzing the presence of specific topics or terms within the Telegram channel data.
-3. **Optional Replies Retrieval Flag:**
-   - Users now have the option to include or exclude replies when retrieving messages. This makes the data collection process more flexible and tailored to specific analysis needs.
+2. **Enhanced Keywords Search Functionality:**
+   - Added a 'Keywords Search' feature that allows for case-insensitive searches of specific keywords within posts.
+   - **How to Use:**
+     1. Input a list of comma-separated keywords. Keywords ending with an asterisk `*` will include variations ending with up to three additional characters.
+     2. Specify a start date to filter posts within the SQL database.
+     3. The tool will generate and save a CSV file in `./graphs_data_and_visualizations/keywords/{current_date}` directory, capturing all posts that match the keywords and date criteria.
 
-4. **Direct Link to Messages:**
-   - The SQL database now includes direct links to the original Telegram messages. This allows for easier referencing and accessing of the source material directly from the database.
+3. **Optional Replies Retrieval:**
+   - Introduced an option to include or exclude replies in message retrievals, allowing for customized data collection.
 
-5. **Forwarded Messages Linking:**
-   - For forwarded messages, links to the original posts are now included in the SQL database. This feature provides a better understanding of the message context and origin.
+4. **Direct Links to Messages:**
+   - The SQL database now stores direct links to the original Telegram messages, facilitating easier access to source material.
+
+5. **Linking Forwarded Messages:**
+   - Forwarded messages in the database now include links to their original posts, enhancing context understanding and traceability.
 
 ### Setting Up a Telegram Developer Account and Obtaining API Credentials
 
@@ -180,9 +182,12 @@ The Telegram Overseer tool offers a variety of commands to manage credentials, t
    - **wordclouds**: 
      - Creates two word clouds, one from target posts and another including replies.
      - Word cloud images are saved as `posts.png` and `posts_and_replies.png` in the directory `./graphs_data_and_visualizations/wordcloud/[timestamp]/`.
-   - **frequency**: 
+   - **frequency**:
      - Extracts the 24-hour and weekly frequency of posts from the targets.
      - Frequency analysis files are named as `[author]_UTC_hourly_frequency.csv` and `[author]_weekly_daily_frequency.csv`, stored in `./graphs_data_and_visualizations/frequency/[author]/[timestamp]/`.
+     - Extracts the **24-hour** and **weekly frequency of posts** for each target.
+     - Frequency analysis files are named `[author]_UTC_hourly_frequency.csv` for hourly data and `[author]_weekly_frequency.csv` for weekly data, stored in `./graphs_data_and_visualizations/frequency/[author]/[timestamp]/`.
+     - A **general overview** file is created daily and weekly which is stored as `{self.now}_general.csv` in `./graphs_data_and_visualizations/frequency/general_overview/`.
 - **keywords_search**: 
   - This function allows you to search for specific keywords within the posts. It creates a table with all posts containing the specified keywords (case insensitive).
   - Keywords can have special modifiers:
