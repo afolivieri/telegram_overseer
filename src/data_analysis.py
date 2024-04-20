@@ -602,19 +602,26 @@ class CleanAndSave:
 
     def frequency(self) ->None:
         """
-        This function creates two frequency tables for each author: one with daily frequencies and one with weekly frequencies.
+        This function creates two frequency tables for each author: one with daily frequencies and one with weekly frequencies, and also a general overview.
         It fetches the post data for each author and extracts the date and time information.
-        It saves these tables in .csv format in the directory './graphs_data_and_visualizations/frequency/{author}/{self.now}/'.
+        It saves these tables in .csv format in the directory './graphs_data_and_visualizations/frequency/{author}/{self.now}/' or,
+        for the general overview in './graphs_data_and_visualizations/frequency/general_overview/'.
         """
-        pc.printout("This will create two tables for each target containing the daily and weekly frequency of posts\n"
-                    , pc.CYAN)
-        sql = "SELECT DISTINCT author, channel_id FROM posts p;"
-        distinct_authors_df = pd.read_sql_query(sql=sql, con=self.conn)
-        for author in distinct_authors_df["author"].tolist():
-            try:
-                os.makedirs("./graphs_data_and_visualizations/frequency/{}/{}".format(author, self.now))
-            except FileExistsError:
-                pass
+        pc.printout("This will create two tables for each target containing the daily and weekly frequency of posts,"
+                    "and a general overview\n", pc.CYAN)
+        os.makedirs("./graphs_data_and_visualizations/frequency/general_overview", exist_ok=True)
+
+        # General overview
+        sql_posts = ("SELECT author, (SUBSTR(date, 9, 2) || '/' || SUBSTR(date, 6, 2) || '/' || SUBSTR(date, 1, 4)) "
+                     "AS formatted_date FROM posts;")
+        posts_df = pd.read_sql_query(sql=sql_posts, con=self.conn, parse_dates=["formatted_date"])
+        overview_df = posts_df.pivot_table(index='formatted_date', columns='author', aggfunc='size', fill_value=0)
+        overview_df.to_csv("./graphs_data_and_visualizations/frequency/general_overview/{}_general.csv".format(self.now)
+                           , index=True)
+        # Authors Frequencies
+        distinct_authors_list = posts_df['author'].unique()
+        for author in distinct_authors_list:
+            os.makedirs("./graphs_data_and_visualizations/frequency/{}/{}".format(author, self.now), exist_ok=True)
             frequency_sql = "SELECT p.date FROM posts p " \
                             "WHERE author = '{}';".format(author)
             frequency_df = pd.read_sql_query(sql=frequency_sql, con=self.conn, parse_dates=["date"])
@@ -626,6 +633,10 @@ class CleanAndSave:
             AA_df = self.list_count(AA_list, colname="weekly_frequency")
             HH_df = self.fill_df(HH_df, "daily", "24_hours_UTC_frequency")
             AA_df = self.fill_df(AA_df, "weekly", "weekly_frequency")
+            # Calculate percentages
+            HH_df["24_hours_UTC_percentage"] = round((HH_df["occurrencies"] / HH_df[
+                "occurrencies"].sum()) * 100, 1)
+            AA_df["weekly_percentage"] = round((AA_df["occurrencies"] / AA_df["occurrencies"].sum()) * 100, 1)
             HH_df.to_csv("./graphs_data_and_visualizations/frequency/{}/{}/{}_UTC_hourly_frequency.csv"
                          .format(author, self.now, author), index=False)
             AA_df.to_csv("./graphs_data_and_visualizations/frequency/{}/{}/{}_weekly_daily_frequency.csv"
